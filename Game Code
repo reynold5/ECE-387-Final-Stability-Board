@@ -1,1 +1,352 @@
+//Original Simon game code adapted and modified from https://www.hackster.io/Arduino_Scuola/a-simple-simon-says-game-25ba99
+//Buzzer portion of code copied from https://github.com/PunkyMunky64/buzzersimonsaysremix/blob/master/SimonSaysBuzzer/SimonSaysBuzzer.ino
+//
+//
+//See the Project Report tab on the Wiki page for schematic information and graphic
+//
+//
 
+#include <LiquidCrystal.h>
+
+const int rs = 11, en = 10, d4 = 9, d5 = 8, d6 = 7, d7 = 6; //Reference pins for LCD display
+int velocity = 500; //Game difficulty variable
+int vchange = -20;
+int error_spot = -1;
+int beeplong = 160;
+
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+const int MAX_LEVEL = 100; //Level variable 
+int sequence[MAX_LEVEL];
+int your_sequence[MAX_LEVEL];
+int level = 1;
+const int BUZZER = 12;
+
+//Force Sensor Inputs
+int blueSens = A3;
+int greenSens = A1;
+int redSens = A0;
+int yellowSens = A2;
+
+int blue;
+int green;
+int yellow;
+int red; 
+
+void setup() {
+pinMode(redSens, INPUT);
+pinMode(greenSens, INPUT);
+pinMode(yellowSens, INPUT);
+pinMode(blueSens, INPUT);
+
+pinMode(2, OUTPUT);
+pinMode(3, OUTPUT);
+pinMode(4, OUTPUT);
+pinMode(5, OUTPUT);
+pinMode(BUZZER, OUTPUT);
+
+digitalWrite(2, LOW);
+digitalWrite(3, LOW);
+digitalWrite(4, LOW);
+digitalWrite(5, LOW);
+lcd.begin(16,2);
+}
+
+void loop()
+{
+if (level == 1)
+generate_sequence();//If start button is pressed, begins sequences generation
+
+if (digitalRead(A4) == LOW || level != 1) //Reads start button
+{
+if (level == 1) {
+//Start up message on LCD display after start button is pressed
+lcd.clear();
+lcd.display();
+lcd.print("   Simon Says");
+lcd.setCursor(0,1);
+lcd.print("    Start");
+delay(1000);
+  }
+lcd.clear();
+lcd.display();
+lcd.print("   Simon Says");
+lcd.setCursor(0,1);
+lcd.print("    Level ");
+lcd.print(level);
+show_sequence();    //show the sequence
+get_sequence();     //wait for your sequence
+}
+}
+
+void show_sequence()
+{
+digitalWrite(2, LOW);
+digitalWrite(3, LOW);
+digitalWrite(4, LOW);
+digitalWrite(5, LOW);
+
+for (int i = 0; i < level; i++)
+{
+if(error_spot==i)
+{
+beeplong = 640;
+}
+digitalWrite(sequence[i], HIGH); //Assigns buzzer tone and correct LED color to randomly generated sequence
+if (sequence[i]==2)
+{
+for(int k=0;k<beeplong;k++)
+   {
+    digitalWrite(BUZZER,HIGH);
+    delay(1);//wait for 1ms
+    digitalWrite(BUZZER,LOW);
+    delay(1);//wait for 1ms
+   }
+}
+if (sequence[i]==3)
+{
+for(int k=0;k<beeplong/2;k++)
+   {
+    digitalWrite(BUZZER,HIGH);
+    delay(2);//wait for 1ms
+    digitalWrite(BUZZER,LOW);
+    delay(2);//wait for 1ms
+   }
+    //output another freque
+}
+if (sequence[i]==4)
+{
+for(int k=0;k<beeplong/3;k++)
+   {
+    digitalWrite(BUZZER,HIGH);
+    delay(3);//wait for 1ms
+    digitalWrite(BUZZER,LOW);
+    delay(3);//wait for 1ms
+   }
+    //output another freque
+}
+if (sequence[i]==5)
+{
+for(int k=0;k<beeplong/4;k++)
+   {
+    digitalWrite(BUZZER,HIGH);
+    delay(4);//wait for 1ms
+    digitalWrite(BUZZER,LOW);
+    delay(4);//wait for 1ms
+   }
+    //output another freque
+}
+
+delay(velocity);
+digitalWrite(sequence[i], LOW);
+delay(200);
+beeplong = 160;
+}
+}
+
+
+void get_sequence()
+{
+
+int blueRead = analogRead(blueSens);
+int redRead = analogRead(redSens);
+int yellowRead = analogRead(yellowSens);
+int greenRead = analogRead(greenSens);
+
+//Sets threshold values for force sensor inputs
+if (blueRead > 400)
+{
+  blue = LOW;
+} else {
+  blue = HIGH;
+}
+if (redRead > 400) {
+  red = LOW;
+} else {
+  red = HIGH;
+}
+if (yellowRead > 400)
+{
+  yellow = LOW;
+} else {
+  yellow = HIGH;
+}
+if (greenRead > 400) {
+  green = LOW;
+} else {
+  green = HIGH;
+}
+
+int flag = 0; //this flag indicates if the sequence is correct
+
+for (int i = 0; i < level; i++)
+{
+flag = 0;
+while(flag == 0)
+{
+//Assigns LED and buzzer response based on which force sensor is pressed
+if (red == LOW) //Red force sensor response
+{
+digitalWrite(5, HIGH);
+for(int k=0;k<40;k++)
+   {
+    digitalWrite(BUZZER,HIGH);
+    delay(4);//wait for 1ms
+    digitalWrite(BUZZER,LOW);
+    delay(4);//wait for 1ms
+   }
+your_sequence[i] = 5;
+flag = 1;
+delay(200);
+if (your_sequence[i] != sequence[i])
+{
+error_spot = i;
+wrong_sequence();
+return;
+}
+digitalWrite(5, LOW);
+}
+
+if (green == LOW) //Green force sensor response
+{
+digitalWrite(4, HIGH);
+for(int k=0;k<53;k++)
+   {
+    digitalWrite(BUZZER,HIGH);
+    delay(3);//wait for 1ms
+    digitalWrite(BUZZER,LOW);
+    delay(3);//wait for 1ms
+   }
+your_sequence[i] = 4;
+flag = 1;
+delay(200);
+if (your_sequence[i] != sequence[i])
+{
+error_spot = i;
+wrong_sequence();
+return;
+}
+digitalWrite(4, LOW);
+}
+
+if (yellow == LOW) //Yellow force sensor response
+{
+digitalWrite(3, HIGH);
+your_sequence[i] = 3;
+for(int k=0;k<80;k++)
+   {
+    digitalWrite(BUZZER,HIGH);
+    delay(2);//wait for 1ms
+    digitalWrite(BUZZER,LOW);
+    delay(2);//wait for 1ms
+   }
+flag = 1;
+delay(200);
+if (your_sequence[i] != sequence[i])
+{
+error_spot = i;
+wrong_sequence();
+return;
+}
+digitalWrite(3, LOW);
+}
+
+if (blue == LOW) //Blue force sensor response
+{
+digitalWrite(2, HIGH);
+your_sequence[i] = 2;
+for(int k=0;k<160;k++)
+   {
+    digitalWrite(BUZZER,HIGH);
+    delay(1);//wait for 1ms
+    digitalWrite(BUZZER,LOW);
+    delay(1);//wait for 1ms
+   }
+flag = 1;
+delay(200);
+if (your_sequence[i] != sequence[i])
+{
+error_spot = i;
+wrong_sequence(); //If sequence entered is wrong, calls wrong_sequence()
+return;
+}
+digitalWrite(2, LOW);
+}
+}
+}
+right_sequence();
+}
+
+void generate_sequence() //Generates truly random sequence
+{
+randomSeed(millis()); //Creates random sequence
+
+for (int i = 0; i < MAX_LEVEL; i++)
+{
+sequence[i] = random(2,6);
+}
+}
+void wrong_sequence() //Blinks LEDs three times and shows correct pattern if wrong input is entered
+{
+for (int i = 0; i < 3; i++)
+{
+digitalWrite(2, HIGH);
+digitalWrite(3, HIGH);
+digitalWrite(4, HIGH);
+digitalWrite(5, HIGH);
+for(int k=0;k<15;k++)
+   {
+    digitalWrite(BUZZER,HIGH);
+    delay(5);//wait for 1ms
+    digitalWrite(BUZZER,LOW);
+    delay(5);//wait for 1ms
+   }
+delay(250);
+digitalWrite(2, LOW);
+digitalWrite(3, LOW);
+digitalWrite(4, LOW);
+digitalWrite(5, LOW);
+delay(250);
+}
+lcd.clear(); //If wrong sequence is entered, displays "Incorrect" and player score
+lcd.display();
+lcd.print("   Incorrect");
+lcd.setCursor(0,1);
+lcd.print("   Score: ");
+lcd.print(level - 1);
+show_sequence();
+level = 1;
+velocity = 500;
+error_spot=-1;
+}
+
+void right_sequence()
+{
+digitalWrite(2, LOW);
+digitalWrite(3, LOW);
+digitalWrite(4, LOW);
+digitalWrite(5, LOW);
+delay(250);
+
+digitalWrite(2, HIGH);
+digitalWrite(3, HIGH);
+digitalWrite(4, HIGH);
+digitalWrite(5, HIGH);
+for(int k=1;k<1000;k++)
+   {
+    digitalWrite(BUZZER,HIGH);
+    delay(abs(k*sin(1/k)));//wait for 1ms
+    digitalWrite(BUZZER,LOW);
+    delay(abs(k*sin(1/k)));//wait for 1ms
+   }
+delay(500);
+digitalWrite(2, LOW);
+digitalWrite(3, LOW);
+digitalWrite(4, LOW);
+digitalWrite(5, LOW);
+delay(500);
+
+if (level < MAX_LEVEL);
+level++;
+
+velocity += vchange; //Increases difficulty and increments random pattern up by one
+}
