@@ -67,6 +67,7 @@ lcd.setCursor(0,1);
 lcd.print("    Start");
 delay(1000);
   }
+  //Display for level
 lcd.clear();
 lcd.display();
 lcd.print("   Simon Says");
